@@ -1,0 +1,96 @@
+/*
+===============================================================================
+Magnitude Analysis: Measuring Customers, Products, and Revenue by Group
+===============================================================================
+Goal:
+    Break the core measures down by descriptive attributes (country,
+    gender, category, individual customer) to see how volume and revenue
+    are spread across the business.
+
+SQL features used:
+    - Aggregates: SUM(), COUNT(), AVG()
+    - GROUP BY, ORDER BY
+    - LEFT JOIN between fact and dimension tables
+===============================================================================
+*/
+
+-- Q1: How many customers does each country have?
+SELECT
+    country,
+    COUNT(customer_key) AS customer_count
+FROM gold.dim_customers
+GROUP BY country
+ORDER BY customer_count DESC;
+
+-- Q2: How is the customer base split by gender?
+SELECT
+    gender,
+    COUNT(customer_key) AS customer_count
+FROM gold.dim_customers
+GROUP BY gender
+ORDER BY customer_count DESC;
+
+-- Q3: How many products sit in each category?
+SELECT
+    category,
+    COUNT(product_key) AS product_count
+FROM gold.dim_products
+GROUP BY category
+ORDER BY product_count DESC;
+
+-- Q4: What is the mean product cost within each category?
+SELECT
+    category,
+    AVG(cost) AS average_cost
+FROM gold.dim_products
+GROUP BY category
+ORDER BY average_cost DESC;
+
+-- Q5: How much revenue does each category bring in?
+--     (Driving from the fact table means a category only appears
+--      if at least one of its products has been sold.)
+SELECT
+    p.category,
+    SUM(f.sales_amount) AS category_revenue
+FROM gold.fact_sales AS f
+LEFT JOIN gold.dim_products AS p
+    ON p.product_key = f.product_key
+GROUP BY p.category
+ORDER BY category_revenue DESC;
+
+-- Q5 (variant): Same question, but driven from the product dimension so
+--               that categories with no sales still show up in the output
+--               (their revenue will be NULL).
+SELECT
+    p.category,
+    SUM(f.sales_amount) AS category_revenue
+FROM gold.dim_products AS p
+LEFT JOIN gold.fact_sales AS f
+    ON p.product_key = f.product_key
+GROUP BY p.category
+ORDER BY category_revenue DESC;
+
+-- Q6: How much revenue has each individual customer generated?
+SELECT
+    c.customer_key,
+    c.first_name,
+    c.last_name,
+    SUM(f.sales_amount) AS customer_revenue
+FROM gold.fact_sales AS f
+LEFT JOIN gold.dim_customers AS c
+    ON c.customer_key = f.customer_key
+GROUP BY
+    c.customer_key,
+    c.first_name,
+    c.last_name
+ORDER BY customer_revenue DESC;
+
+-- Q7: How many units were sold in each customer country?
+SELECT
+    c.country,
+    SUM(f.quantity) AS units_sold
+FROM gold.fact_sales AS f
+LEFT JOIN gold.dim_customers AS c
+    ON c.customer_key = f.customer_key
+GROUP BY c.country
+ORDER BY units_sold DESC;
