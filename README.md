@@ -74,7 +74,7 @@ The scripts query a gold-layer star schema data warehouse made up of:
 
 ## Getting Started
 
-1. Set up the data warehouse in [SQL Server]
+1. Set up the data warehouse in SQL Server and SSMS
 2. Load the dataset (see the source below)
 3. Run the scripts in numerical order from the `scripts/` folder
 
@@ -85,7 +85,7 @@ The scripts query a gold-layer star schema data warehouse made up of:
 
 ## Tech Stack
 
-- [SQL Server] and [SSMS]
+- SQL Server and SSMS
 - Git and GitHub
 
 ## Credits
