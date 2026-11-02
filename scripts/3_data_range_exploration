@@ -1,0 +1,31 @@
+/*
+===============================================================================
+Time Span Profiling: Order History and Customer Ages
+===============================================================================
+Goal:
+    Establish how far back the data goes and how wide the customer age
+    spread is. Knowing the earliest and latest dates up front tells us
+    which periods can be trusted for trend analysis later on.
+
+SQL features used:
+    - MIN(), MAX()
+    - DATEDIFF(), GETDATE()
+===============================================================================
+*/
+
+-- Step 1: Find the earliest and latest order dates,
+--         plus the number of months the sales data covers
+SELECT
+    MIN(order_date)                                    AS first_order_date,
+    MAX(order_date)                                    AS last_order_date,
+    DATEDIFF(MONTH, MIN(order_date), MAX(order_date))  AS months_of_history
+FROM gold.fact_sales;
+
+-- Step 2: Identify the oldest and youngest customers from their birthdates
+--         and convert each one into an age as of today
+SELECT
+    MIN(birthdate)                              AS oldest_customer_birthdate,
+    DATEDIFF(YEAR, MIN(birthdate), GETDATE())   AS oldest_customer_age,
+    MAX(birthdate)                              AS youngest_customer_birthdate,
+    DATEDIFF(YEAR, MAX(birthdate), GETDATE())   AS youngest_customer_age
+FROM gold.dim_customers;
