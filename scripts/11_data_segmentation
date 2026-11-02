@@ -1,0 +1,73 @@
+/*
+===============================================================================
+Data Segmentation: Grouping Products and Customers into Meaningful Tiers
+===============================================================================
+Goal:
+    Turn raw numeric values into business-friendly buckets so that groups
+    can be compared and targeted. Products are bucketed by cost, and
+    customers are classified by how long they have been buying and how
+    much they have spent.
+
+SQL features used:
+    - CASE expressions for custom bucketing logic
+    - CTEs (WITH clause) and derived tables
+    - Aggregates: SUM(), MIN(), MAX(), COUNT()
+    - DATEDIFF()
+    - GROUP BY, ORDER BY
+===============================================================================
+*/
+
+/* Part 1: Bucket every product by its cost, then count how many products land in each bucket. */
+WITH product_cost_buckets AS (
+    SELECT
+        product_key,
+        product_name,
+        cost,
+        CASE
+            WHEN cost < 100 THEN 'Below 100'
+            WHEN cost BETWEEN 100 AND 500 THEN '100-500'
+            WHEN cost BETWEEN 500 AND 1000 THEN '500-1000'
+            ELSE 'Above 1000'
+        END AS cost_bucket
+    FROM gold.dim_products
+)
+SELECT
+    cost_bucket,
+    COUNT(product_key) AS product_count
+FROM product_cost_buckets
+GROUP BY cost_bucket
+ORDER BY product_count DESC;
+
+/* Part 2: Classify customers into three tiers using their buying
+           history and total spend:
+    - VIP:     12+ months between first and last order AND spend above 5,000
+    - Regular: 12+ months between first and last order AND spend of 5,000 or less
+    - New:     under 12 months between first and last order
+   Then count the customers in each tier. */
+WITH customer_activity AS (
+    SELECT
+        c.customer_key,
+        SUM(f.sales_amount)                                AS lifetime_spend,
+        MIN(f.order_date)                                  AS first_order_date,
+        MAX(f.order_date)                                  AS last_order_date,
+        DATEDIFF(MONTH, MIN(f.order_date), MAX(f.order_date)) AS months_active
+    FROM gold.fact_sales AS f
+    LEFT JOIN gold.dim_customers AS c
+        ON c.customer_key = f.customer_key
+    GROUP BY c.customer_key
+)
+SELECT
+    customer_tier,
+    COUNT(customer_key) AS customer_count
+FROM (
+    SELECT
+        customer_key,
+        CASE
+            WHEN months_active >= 12 AND lifetime_spend > 5000  THEN 'VIP'
+            WHEN months_active >= 12 AND lifetime_spend <= 5000 THEN 'Regular'
+            ELSE 'New'
+        END AS customer_tier
+    FROM customer_activity
+) AS tiered_customers
+GROUP BY customer_tier
+ORDER BY customer_count DESC;
