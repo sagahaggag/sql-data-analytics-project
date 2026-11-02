@@ -1,0 +1,37 @@
+/*
+===============================================================================
+Part-to-Whole Analysis: Category Share of Total Revenue
+===============================================================================
+Goal:
+    Work out how much each product category contributes to overall
+    revenue, expressed as a percentage. This highlights which categories
+    carry the business and which play a minor role.
+
+SQL features used:
+    - CTE (WITH clause)
+    - Aggregate: SUM()
+    - Window function: SUM() OVER () for the grand total
+    - CAST(), ROUND()
+===============================================================================
+*/
+
+-- Which categories contribute most to total revenue?
+-- Step 1: total the revenue for each category.
+-- Step 2: divide each category's revenue by the grand total across all
+-- categories (computed with an empty OVER clause) to get its share.
+WITH revenue_by_category AS (
+    SELECT
+        p.category,
+        SUM(f.sales_amount) AS category_revenue
+    FROM gold.fact_sales AS f
+    LEFT JOIN gold.dim_products AS p
+        ON p.product_key = f.product_key
+    GROUP BY p.category
+)
+SELECT
+    category,
+    category_revenue,
+    SUM(category_revenue) OVER ()                                                  AS grand_total_revenue,
+    ROUND(CAST(category_revenue AS FLOAT) / SUM(category_revenue) OVER () * 100, 2) AS revenue_share_pct
+FROM revenue_by_category
+ORDER BY category_revenue DESC;
