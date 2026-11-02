@@ -1,0 +1,62 @@
+/*
+===============================================================================
+Key Business Metrics: Core Totals, Counts, and Averages
+===============================================================================
+Goal:
+    Produce the headline numbers that describe the business at a glance
+    (revenue, volume, pricing, and the size of the customer and product
+    base). These figures act as a sanity check and a baseline for the
+    deeper analyses that follow.
+
+SQL features used:
+    - SUM(), AVG()
+    - COUNT(), COUNT(DISTINCT ...)
+    - UNION ALL
+===============================================================================
+*/
+
+-- Metric 1: Overall revenue generated
+SELECT SUM(sales_amount) AS total_revenue
+FROM gold.fact_sales;
+
+-- Metric 2: Total number of units sold
+SELECT SUM(quantity) AS total_units_sold
+FROM gold.fact_sales;
+
+-- Metric 3: Mean unit price across all sales lines
+SELECT AVG(price) AS average_unit_price
+FROM gold.fact_sales;
+
+-- Metric 4: Order count
+--           The first query counts every row (one order can span several
+--           lines), while the second counts each order number only once.
+SELECT COUNT(order_number) AS order_line_count
+FROM gold.fact_sales;
+
+SELECT COUNT(DISTINCT order_number) AS unique_order_count
+FROM gold.fact_sales;
+
+-- Metric 5: Size of the product catalogue
+SELECT COUNT(product_name) AS product_count
+FROM gold.dim_products;
+
+-- Metric 6: Size of the customer base
+SELECT COUNT(customer_key) AS customer_count
+FROM gold.dim_customers;
+
+-- Metric 7: Customers who have actually bought something
+SELECT COUNT(DISTINCT customer_key) AS purchasing_customer_count
+FROM gold.fact_sales;
+
+-- Consolidated view: every headline metric in a single result set
+SELECT 'Total Sales'     AS metric_name, SUM(sales_amount)             AS metric_value FROM gold.fact_sales
+UNION ALL
+SELECT 'Total Quantity',                 SUM(quantity)                                 FROM gold.fact_sales
+UNION ALL
+SELECT 'Average Price',                  AVG(price)                                    FROM gold.fact_sales
+UNION ALL
+SELECT 'Total Orders',                   COUNT(DISTINCT order_number)                  FROM gold.fact_sales
+UNION ALL
+SELECT 'Total Products',                 COUNT(DISTINCT product_name)                  FROM gold.dim_products
+UNION ALL
+SELECT 'Total Customers',                COUNT(customer_key)                           FROM gold.dim_customers;
