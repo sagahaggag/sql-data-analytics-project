@@ -1,0 +1,51 @@
+/*
+===============================================================================
+Cumulative Analysis: Running Totals and Moving Averages Over Time
+===============================================================================
+Goal:
+    Show how revenue builds up across periods rather than just how it
+    looks in isolation. A running total reveals long-term growth, and a
+    moving average smooths price movements across the timeline.
+
+SQL features used:
+    - Window functions: SUM() OVER (), AVG() OVER ()
+    - PARTITION BY, ORDER BY inside OVER()
+    - DATETRUNC(), YEAR()
+    - Subqueries (derived tables)
+===============================================================================
+*/
+
+-- Q1: Monthly revenue with a running total that resets at the start
+-- of each calendar year
+SELECT
+    sales_month,
+    monthly_revenue,
+    SUM(monthly_revenue) OVER (
+        PARTITION BY YEAR(sales_month)
+        ORDER BY sales_month
+    ) AS ytd_revenue
+FROM (
+    SELECT
+        DATETRUNC(MONTH, order_date) AS sales_month,
+        SUM(sales_amount)            AS monthly_revenue
+    FROM gold.fact_sales
+    WHERE order_date IS NOT NULL
+    GROUP BY DATETRUNC(MONTH, order_date)
+) AS monthly_sales;
+
+-- Q2: Yearly revenue with an all-time running total, plus a moving
+-- average of the yearly average price
+SELECT
+    sales_year,
+    yearly_revenue,
+    SUM(yearly_revenue) OVER (ORDER BY sales_year) AS cumulative_revenue,
+    AVG(yearly_avg_price) OVER (ORDER BY sales_year) AS moving_avg_price
+FROM (
+    SELECT
+        DATETRUNC(YEAR, order_date) AS sales_year,
+        SUM(sales_amount)           AS yearly_revenue,
+        AVG(price)                  AS yearly_avg_price
+    FROM gold.fact_sales
+    WHERE order_date IS NOT NULL
+    GROUP BY DATETRUNC(YEAR, order_date)
+) AS yearly_sales;
