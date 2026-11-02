@@ -1,0 +1,32 @@
+/*
+===============================================================================
+Dimension Profiling: Customer Geography and Product Hierarchy
+===============================================================================
+Goal:
+    Get familiar with the descriptive attributes held in the dimension
+    tables by listing their unique values. This shows how customers are
+    spread geographically and how products are organised.
+
+SQL features used:
+    - DISTINCT
+    - ORDER BY
+===============================================================================
+*/
+
+-- Step 1: List every country represented in the customer base
+SELECT DISTINCT
+    country
+FROM gold.dim_customers
+ORDER BY country;
+
+-- Step 2: Map out the full product hierarchy
+--         (category > subcategory > product), sorted top-down
+SELECT DISTINCT
+    category,
+    subcategory,
+    product_name
+FROM gold.dim_products
+ORDER BY
+    category,
+    subcategory,
+    product_name;
