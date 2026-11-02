@@ -56,10 +56,10 @@ sql-data-analytics-project/
 
 ## Data Model
 
-The scripts query a [star schema / gold-layer] data warehouse made up of:
+The scripts query a gold-layer star schema data warehouse made up of:
 
-- **Dimension tables**: e.g. `dim_customers`, [`dim_products`]
-- **Fact table**: e.g. [`fact_sales`]
+- **Dimension tables**: e.g. `gold.dim_customers`, `gold.dim_products`
+- **Fact table**: e.g. `gold.fact_sales`
 
 > Update this section with your actual tables and columns.
 
