@@ -1,27 +1,28 @@
-```
 /*
 ===============================================================================
-Database Exploration
+Schema Discovery: Tables and Columns
 ===============================================================================
-Purpose:
-    - To explore the structure of the database, including the list of tables and their schemas.
-    - To inspect the columns and metadata for specific tables.
+Goal:
+    A first look at the data warehouse before any analysis. This script
+    shows which tables and views exist, then drills into the column
+    definitions of one table.
 
-Table Used:
+Metadata views queried:
     - INFORMATION_SCHEMA.TABLES
     - INFORMATION_SCHEMA.COLUMNS
 ===============================================================================
 */
 
--- Retrieve a list of all tables in the database
+-- Step 1: Catalogue every table and view available in the database
 SELECT
-    TABLE_CATALOG,
-    TABLE_SCHEMA,
-    TABLE_NAME,
-    TABLE_TYPE
+    TABLE_CATALOG  AS database_name,
+    TABLE_SCHEMA   AS schema_name,
+    TABLE_NAME     AS object_name,
+    TABLE_TYPE     AS object_type
 FROM INFORMATION_SCHEMA.TABLES;
 
--- Retrieve all columns for a specific table (dim_customers)
+-- Step 2: Inspect the column definitions of the customer dimension
+--         (data types, nullability, and maximum text length)
 SELECT
     COLUMN_NAME,
     DATA_TYPE,
@@ -29,5 +30,3 @@ SELECT
     CHARACTER_MAXIMUM_LENGTH
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_NAME = 'dim_customers';
-
-```
