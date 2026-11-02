@@ -1,0 +1,60 @@
+/*
+===============================================================================
+Performance Analysis: Product Sales vs. Their Average and the Prior Year
+===============================================================================
+Goal:
+    Judge how each product performs in a given year by setting its sales
+    against two yardsticks: the product's own long-run yearly average, and
+    its result in the previous year. Each row is labelled so that
+    improvements and declines are visible at a glance.
+
+SQL features used:
+    - CTE (WITH clause)
+    - Window functions: LAG(), AVG() OVER (PARTITION BY ...)
+    - CASE expressions for trend labels
+    - GROUP BY, ORDER BY
+===============================================================================
+*/
+
+/* Step 1: aggregate revenue per product per year.
+   Step 2: compare each yearly figure with (a) the product's average
+           across all years and (b) the same product's previous year. */
+WITH product_yearly_revenue AS (
+    SELECT
+        YEAR(f.order_date)  AS sales_year,
+        p.product_name,
+        SUM(f.sales_amount) AS yearly_revenue
+    FROM gold.fact_sales AS f
+    LEFT JOIN gold.dim_products AS p
+        ON p.product_key = f.product_key
+    WHERE f.order_date IS NOT NULL
+    GROUP BY
+        YEAR(f.order_date),
+        p.product_name
+)
+SELECT
+    sales_year,
+    product_name,
+    yearly_revenue,
+
+    -- Comparison 1: against the product's own average
+    AVG(yearly_revenue) OVER (PARTITION BY product_name)                      AS product_avg_revenue,
+    yearly_revenue - AVG(yearly_revenue) OVER (PARTITION BY product_name)     AS variance_from_avg,
+    CASE
+        WHEN yearly_revenue - AVG(yearly_revenue) OVER (PARTITION BY product_name) > 0 THEN 'Above Avg'
+        WHEN yearly_revenue - AVG(yearly_revenue) OVER (PARTITION BY product_name) < 0 THEN 'Below Avg'
+        ELSE 'Avg'
+    END                                                                       AS avg_comparison,
+
+    -- Comparison 2: against the previous year (year-over-year)
+    LAG(yearly_revenue) OVER (PARTITION BY product_name ORDER BY sales_year)  AS prior_year_revenue,
+    yearly_revenue - LAG(yearly_revenue) OVER (PARTITION BY product_name ORDER BY sales_year) AS yoy_variance,
+    CASE
+        WHEN yearly_revenue - LAG(yearly_revenue) OVER (PARTITION BY product_name ORDER BY sales_year) > 0 THEN 'Increase'
+        WHEN yearly_revenue - LAG(yearly_revenue) OVER (PARTITION BY product_name ORDER BY sales_year) < 0 THEN 'Decrease'
+        ELSE 'No Change'
+    END                                                                       AS yoy_trend
+FROM product_yearly_revenue
+ORDER BY
+    product_name,
+    sales_year;
