@@ -1,0 +1,59 @@
+/*
+===============================================================================
+Change-Over-Time Analysis: Monthly Sales, Customer, and Volume Trends
+===============================================================================
+Goal:
+    Follow how revenue, active customers, and units sold move from one
+    period to the next. This helps reveal growth, decline, and seasonal
+    patterns. The same monthly view is built three ways to compare the
+    date functions available in T-SQL.
+
+SQL features used:
+    - Date functions: YEAR(), MONTH(), DATETRUNC(), FORMAT()
+    - Aggregates: SUM(), COUNT(DISTINCT ...)
+    - GROUP BY, ORDER BY
+===============================================================================
+*/
+
+-- Monthly performance, three different ways
+
+-- Method 1: split the date into separate year and month columns
+SELECT
+    YEAR(order_date)             AS sales_year,
+    MONTH(order_date)            AS sales_month,
+    SUM(sales_amount)            AS monthly_revenue,
+    COUNT(DISTINCT customer_key) AS active_customers,
+    SUM(quantity)                AS units_sold
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY
+    YEAR(order_date),
+    MONTH(order_date)
+ORDER BY
+    YEAR(order_date),
+    MONTH(order_date);
+
+-- Method 2: DATETRUNC() collapses every date to the first day of its month,
+-- giving a single proper date column that sorts chronologically
+SELECT
+    DATETRUNC(MONTH, order_date) AS sales_month,
+    SUM(sales_amount)            AS monthly_revenue,
+    COUNT(DISTINCT customer_key) AS active_customers,
+    SUM(quantity)                AS units_sold
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY DATETRUNC(MONTH, order_date)
+ORDER BY DATETRUNC(MONTH, order_date);
+
+-- Method 3: FORMAT() produces a readable label such as 2013-Dec
+-- Caution: the result is text, so ORDER BY sorts it alphabetically
+-- (Apr, Aug, Dec, ...) rather than in calendar order.
+SELECT
+    FORMAT(order_date, 'yyyy-MMM') AS sales_month,
+    SUM(sales_amount)              AS monthly_revenue,
+    COUNT(DISTINCT customer_key)   AS active_customers,
+    SUM(quantity)                  AS units_sold
+FROM gold.fact_sales
+WHERE order_date IS NOT NULL
+GROUP BY FORMAT(order_date, 'yyyy-MMM')
+ORDER BY FORMAT(order_date, 'yyyy-MMM');
